@@ -1,16 +1,26 @@
-# This is a sample Python script.
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import bisect
 
-# Press Shift+F10 to execute it or replace it with your code.
-# Press Double Shift to search everywhere for classes, files, tool windows, actions, and settings.
+class StatisticalRecord:
+    def __init__(self,name):
+        self.name = name
 
+class HistogramRecord(StatisticalRecord):
+    def __init__(self,name):
+        super(HistogramRecord,self).__init__(self,name)
+        self.bins = np.array([-np.inf, np.inf])
+        self.count = {}
+        self.total_count = 0
+    def add_point(self,x):
+        self.increment_bins(x)
+        self.increment_count(x)
+    def increment_bins(self,x):
+        pass
+    def increment_count(self,x):
+        pass
 
-def print_hi(name):
-    # Use a breakpoint in the code line below to debug your script.
-    print(f'Hi, {name}')  # Press Ctrl+F8 to toggle the breakpoint.
-
-
-# Press the green button in the gutter to run the script.
-if __name__ == '__main__':
-    print_hi('PyCharm')
-
-# See PyCharm help at https://www.jetbrains.com/help/pycharm/
+class OnlineHistogram:
+    def __init__(self):
+        self.records = dict()
