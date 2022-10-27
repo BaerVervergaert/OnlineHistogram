@@ -64,29 +64,35 @@ class NaNSet:
 class NaiveOnlineHistogramState(OneDimensionalInterval):
     def __init__(self,*args,parent_state=None,**kwargs):
         super(NaiveOnlineHistogramState,self).__init__(*args,**kwargs)
-        self.estimate_P = 0
         self.parent_state = parent_state
+        self.count = 0
         if self.parent_state is not None:
             self.latest_count = self.parent_state.latest_count
         else:
             self.latest_count = 0
     def current_estimate_P(self,t):
         if t==0:
-            return(self.estimate_P)
-        if self.parent_state is None:
-            out = self.estimate_P*self.latest_count/t
+            personal_guess = 0.
         else:
+            personal_guess = self.count/t
+        if self.parent_state is not None:
             parent_count = self.parent_state.latest_count
-            out = self.estimate_P*(self.latest_count-parent_count)/t + .5*self.parent_state.current_estimate_P(t)*parent_count/t
+            out = personal_guess*(self.latest_count-parent_count)/t + .5*self.parent_state.current_estimate_P(t)*parent_count/t
+        else:
+            out = personal_guess
         return(out)
+    def increment(self):
+        self.count += 1
 
 class NaNOnlineHistogramState(NaNSet):
     def __init__(self,*args,**kwargs):
-        self.estimate_P = 0
+        self.count = 0
         self.latest_count = 0
     def current_estimate_P(self,t):
-        out = self.estimate_P*self.latest_count/t
+        out = self.count/t
         return(out)
+    def increment(self):
+        self.count += 1
 
 class Counter:
     def __init__(self):
@@ -144,12 +150,7 @@ class NaiveOnlineHistogramAlgorithm(BaseOnlineHistogramAlgorithm):
         self.states.append(right_state)
     def update(self,state,x):
         self.count.increment()
-        if state.parent_state is not None:
-            birth_count = state.parent_state.latest_count
-        else:
-            birth_count = 0
-        delta = 1./(self.count.count-birth_count)
-        state.estimate_P = delta + (state.latest_count-birth_count)*delta*state.estimate_P
+        state.increment()
         state.latest_count = self.count.count
 
 def plot_onedimensional_algo(left,right,algo):
