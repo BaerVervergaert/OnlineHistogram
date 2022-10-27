@@ -21,6 +21,6 @@ def create_test_data(N,d):
 if __name__=='__main__':
     N, d = 10**5, 3
     data = create_test_data(N, d)
-    algo = NaiveOnlineHistogramAlgorithm()
+    algo = BoundOnlineHistogramAlgorithm(100)
     algo.loop(data)
     plot_onedimensional_algo(-1.,1.,algo)

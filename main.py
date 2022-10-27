@@ -153,6 +153,61 @@ class NaiveOnlineHistogramAlgorithm(BaseOnlineHistogramAlgorithm):
         state.increment()
         state.latest_count = self.count.count
 
+class BoundOnlineHistogramAlgorithm(BaseOnlineHistogramAlgorithm):
+    def __init__(self,box_bound):
+        super(BoundOnlineHistogramAlgorithm,self).__init__()
+        self.box_bound = box_bound
+        self._initialize_states()
+    def _initialize_states(self):
+        self.states = []
+        numeric_state = NaiveOnlineHistogramState(-np.inf,np.inf,False,False)
+        self.states.append(numeric_state)
+        nan_state = NaNSet(np.isnan)
+        self.states.append(nan_state)
+    def find_state(self,x):
+        out = next(filter(lambda state,x=x: state.member(x),self.states))
+        return(out)
+    def constraint(self,state,x):
+        if isinstance(state,OneDimensionalInterval):
+            out = state.count>=self.box_bound
+            return(out)
+        else:
+            return(False)
+    def split(self,state,x):
+        left_bound = state.left_bound
+        right_bound = state.right_bound
+        if left_bound == -np.inf or right_bound == np.inf:
+            half_bound = x
+        else:
+            half_bound = (left_bound+right_bound)/2.
+        if abs(x-left_bound)<abs(x-right_bound):
+            left_interval_inclusive = True
+            right_interval_inclusive = False
+        else:
+            left_interval_inclusive = False
+            right_interval_inclusive = True
+        left_state = NaiveOnlineHistogramState(
+            left_bound = left_bound,
+            right_bound = half_bound,
+            left_bound_inclusive=state.left_bound_inclusive,
+            right_bound_inclusive=left_interval_inclusive,
+            parent_state=state
+        )
+        right_state = NaiveOnlineHistogramState(
+            left_bound = half_bound,
+            right_bound = right_bound,
+            left_bound_inclusive=right_interval_inclusive,
+            right_bound_inclusive=state.right_bound_inclusive,
+            parent_state=state
+        )
+        self.states.remove(state)
+        self.states.append(left_state)
+        self.states.append(right_state)
+    def update(self,state,x):
+        self.count.increment()
+        state.increment()
+        state.latest_count = self.count.count
+
 def plot_onedimensional_algo(left,right,algo):
     def in_bounds(state,left=left,right=right):
         if isinstance(state,OneDimensionalInterval):
