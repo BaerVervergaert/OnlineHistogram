@@ -1,4 +1,6 @@
-from main import *
+from display import plot_onedimensional_algo
+#from main import *
+from algorithms import *
 import numpy as np
 import pandas as pd
 import string
@@ -21,6 +23,6 @@ def create_test_data(N,d):
 if __name__=='__main__':
     N, d = 10**5, 3
     data = create_test_data(N, d)
-    algo = BoundOnlineHistogramAlgorithm(1000)
+    algo = HoeffdingLebesgueAlgorithm(.1,1)
     algo.loop(data)
     plot_onedimensional_algo(-3.,13.,algo)
