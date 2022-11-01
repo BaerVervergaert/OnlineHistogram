@@ -11,6 +11,7 @@ class BaseAlgorithm:
         for x in stream:
             self.single_step(x)
     def single_step(self,x):
+        print(self)
         state = self.find_state(x)
         if self.constraint(state,x):
             self.split(state,x)
@@ -25,6 +26,9 @@ class BaseAlgorithm:
         raise NotImplementedError
     def update(self,state,x):
         raise NotImplementedError
+    def __str__(self):
+        out = '\n'.join([ str(state) for state in self.states ])
+        return(out)
 
 
 class BiasVarianceBalancingAlgorithm(BaseAlgorithm):
@@ -41,10 +45,11 @@ class BiasVarianceBalancingAlgorithm(BaseAlgorithm):
         base_bin = HierarchicalBin(base_set,None,0)
         self.states.append(base_bin)
     def constraint(self,state,x):
+        if state.live_count(self.count) == 0:
+            return(False)
         if self.count >= 2**(4+self.dim)*self.previous_split/self.base_width:
             return(True)
-        else:
-            return(False)
+        return(False)
     def split(self,state,x):
         new_states = []
         for state in self.states:
@@ -53,7 +58,6 @@ class BiasVarianceBalancingAlgorithm(BaseAlgorithm):
         new_states = tuple(new_states)
         self.states = new_states
     def update(self,state,x):
-        raise NotImplementedError
         state.count += 1
         self.count += 1
 
@@ -72,17 +76,17 @@ class HoeffdingLebesgueAlgorithm(BaseAlgorithm):
         self.states.append(base_bin)
     def constraint(self,state,x):
         t = state.live_count(self.count)
+        if t==0:
+            return(False)
         delta = (state.prob_estimate(self.count)-1/len(self.states))
         if delta>0 and t >= np.log(self.acceptance_rate)*8/(delta**2):
             return(True)
-        else:
-            return(False)
+        return(False)
     def split(self,state,x):
         half_bound = [ (state.right_bound[idx] + state.left_bound[idx])/2. for idx in range(state.dim) ]
         new_states = state.split(half_bound)
         self.states.remove(state)
         self.states += new_states
     def update(self,state,x):
-        raise NotImplementedError
         state.count += 1
         self.count += 1
