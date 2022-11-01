@@ -23,6 +23,9 @@ class HierarchicalBin(Bin):
         self.parent = parent
         self.birth_count = birth_count
         self.child_count = 0
+    def __str__(self):
+        out = f"{self.count}, {self.set}\n{self.parent}"
+        return(out)
     def live_count(self, current_count):
         live_count = current_count - self.birth_count
         return(live_count)

@@ -40,6 +40,13 @@ class OneDimensionalInterval(Set):
         self.right_bound = b
         self.left_inclusive = left_inclusive
         self.right_inclusive = right_inclusive
+    def __str__(self):
+        out = '[' if self.left_inclusive else '('
+        out += str(self.left_bound)
+        out += ','
+        out += str(self.right_bound)
+        out += ']' if self.right_inclusive else ')'
+        return(out)
     def __contains__(self, item):
         if self.left_bound < item < self.right_bound:
             return (True)
@@ -69,7 +76,10 @@ class MultiDimensionalInterval(Set):
     def __contains__(self, item):
         item = self._check_item_dimension(item)
         out = all( (item[idx] in self.marginals[idx]) for idx in range(self.dim))
-        return (False)
+        return (out)
+    def __str__(self):
+        out = 'x'.join([str(marginal) for marginal in self.marginals])
+        return(out)
     def split(self,item,include_in_left):
         item = self._check_item_dimension(item)
         include_in_left = self._check_item_dimension(include_in_left)
