@@ -8,7 +8,8 @@ class BaseAlgorithm:
         self.count = 0
         self.states = []
     def loop(self,stream):
-        for x in stream:
+        for i,x in enumerate(stream):
+            print('\r',i,end='')
             self.single_step(x)
     def single_step(self,x):
         state = self.find_state(x)
@@ -41,48 +42,30 @@ class BiasVarianceBalancingAlgorithm(BaseAlgorithm):
         left_inclusive = [ False for i in range(self.dim) ]
         right_inclusive = [ False for i in range(self.dim) ]
         base_set = MultiDimensionalInterval(a,b,left_inclusive,right_inclusive)
-        base_bin = HierarchicalBin(base_set,None,0)
+        base_bin = MedianHierarchicalBin(self.base_width,base_set,None,0)
         self.states.append(base_bin)
     def constraint(self,state,x):
         if state.live_count(self.count) == 0:
             return(False)
-        if self.count >= 2**(3+self.dim)*self.previous_split/self.base_width:
+        if self.count >= 2**(2+self.dim)*self.previous_split/self.base_width:
             return(True)
         return(False)
-    def determine_split_point(self,left_bound,right_bound,x):
-        l_finite = np.isfinite(left_bound)
-        r_finite = np.isfinite(right_bound)
-        if l_finite and r_finite:
-            split_point = (left_bound + right_bound) / 2.
-
-        elif (not l_finite) and r_finite:
-            if left_bound<x<right_bound:
-                split_point = x
-            else:
-                split_point = right_bound-self.base_width
-
-        elif l_finite and (not r_finite):
-            if left_bound<x<right_bound:
-                split_point = x
-            else:
-                split_point = left_bound+self.base_width
-
-        elif (not l_finite) and (not r_finite):
-            split_point = x
-        return(split_point)
 
     def split(self,_state,x):
         new_states = []
         for state in self.states:
-            x = state.set._check_item_dimension(x)
-            half_bound = [self.determine_split_point(state.set.left_bound[idx],state.set.right_bound[idx],x[idx]) for idx in range(state.set.dim)]
-            half_include = [abs(state.set.left_bound[idx] - x[idx]) <= abs(state.set.right_bound[idx] - x[idx]) for idx in range(state.set.dim)]
-            new_states += state.split(self.count, half_bound, half_include)
+            if state.median is None:
+                new_states += [state]
+            else:
+                x = state.set._check_item_dimension(x)
+                half_bound = state.median
+                half_include = [abs(state.set.left_bound[idx] - x[idx]) <= abs(state.set.right_bound[idx] - x[idx]) for idx in range(state.set.dim)]
+                new_states += state.split(self.count, half_bound, half_include)
         new_states = tuple(new_states)
         self.states = new_states
         self.previous_split = self.count
     def update(self,state,x):
-        state.count += 1
+        state.increment(x)
         self.count += 1
 
 
