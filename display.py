@@ -19,6 +19,11 @@ def plot_onedimensional_algo(left,right,algo):
     diff_bounds = [ state.set.right_bound[0] - state.set.left_bound[0] for state in states ]
     diff_bounds[0] = left_bounds[1]-left
     diff_bounds[-1] = right-left_bounds[-1]
-    height = [ state.current_estimate_P(algo.count.count)/state.size() for state in states ]
+    height = [ state.historical_prob_estimate(algo.count)/state.set.size() for state in states ]
+    print(left_bounds)
+    print(diff_bounds)
+    print(height)
+    print([ state.historical_prob_estimate(algo.count) for state in states ])
+    print([ state.set.size() for state in states ])
     plt.bar(left_bounds,height,diff_bounds,align='edge',linewidth=1,edgecolor='k')
     plt.show()

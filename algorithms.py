@@ -11,7 +11,6 @@ class BaseAlgorithm:
         for x in stream:
             self.single_step(x)
     def single_step(self,x):
-        print(self)
         state = self.find_state(x)
         if self.constraint(state,x):
             self.split(state,x)
@@ -47,16 +46,41 @@ class BiasVarianceBalancingAlgorithm(BaseAlgorithm):
     def constraint(self,state,x):
         if state.live_count(self.count) == 0:
             return(False)
-        if self.count >= 2**(4+self.dim)*self.previous_split/self.base_width:
+        if self.count >= 2**(3+self.dim)*self.previous_split/self.base_width:
             return(True)
         return(False)
-    def split(self,state,x):
+    def determine_split_point(self,left_bound,right_bound,x):
+        l_finite = np.isfinite(left_bound)
+        r_finite = np.isfinite(right_bound)
+        if l_finite and r_finite:
+            split_point = (left_bound + right_bound) / 2.
+
+        elif (not l_finite) and r_finite:
+            if left_bound<x<right_bound:
+                split_point = x
+            else:
+                split_point = right_bound-self.base_width
+
+        elif l_finite and (not r_finite):
+            if left_bound<x<right_bound:
+                split_point = x
+            else:
+                split_point = left_bound+self.base_width
+
+        elif (not l_finite) and (not r_finite):
+            split_point = x
+        return(split_point)
+
+    def split(self,_state,x):
         new_states = []
         for state in self.states:
-            half_bound = [ (state.right_bound[idx] + state.left_bound[idx])/2. for idx in range(state.dim) ]
-            new_states.append(state.split(half_bound))
+            x = state.set._check_item_dimension(x)
+            half_bound = [self.determine_split_point(state.set.left_bound[idx],state.set.right_bound[idx],x[idx]) for idx in range(state.set.dim)]
+            half_include = [abs(state.set.left_bound[idx] - x[idx]) <= abs(state.set.right_bound[idx] - x[idx]) for idx in range(state.set.dim)]
+            new_states += state.split(self.count, half_bound, half_include)
         new_states = tuple(new_states)
         self.states = new_states
+        self.previous_split = self.count
     def update(self,state,x):
         state.count += 1
         self.count += 1
@@ -78,15 +102,24 @@ class HoeffdingLebesgueAlgorithm(BaseAlgorithm):
         t = state.live_count(self.count)
         if t==0:
             return(False)
+        if t==1:
+            return(True)
         delta = (state.prob_estimate(self.count)-1/len(self.states))
-        if delta>0 and t >= np.log(self.acceptance_rate)*8/(delta**2):
+        if state.live_count(self.count)>0 and delta>0 and t >= np.log(1./self.acceptance_rate)*8/(delta**2):
             return(True)
         return(False)
     def split(self,state,x):
-        half_bound = [ (state.right_bound[idx] + state.left_bound[idx])/2. for idx in range(state.dim) ]
-        new_states = state.split(half_bound)
+        x = state.set._check_item_dimension(x)
+        half_bound = [ (state.set.right_bound[idx] + state.set.left_bound[idx])/2. for idx in range(state.set.dim) ]
+        half_bound = [ half_bound[idx] if np.isfinite(half_bound[idx]) else x[idx] for idx in range(state.set.dim) ]
+        half_include = [ abs(state.set.left_bound[idx]-x[idx])<=abs(state.set.right_bound[idx]-x[idx]) for idx in range(state.set.dim) ]
+        new_states = state.split(self.count,half_bound,half_include)
         self.states.remove(state)
         self.states += new_states
     def update(self,state,x):
         state.count += 1
         self.count += 1
+    def __str__(self):
+        out = 'HoeffdingLebesgueAlgorithm, with states:\n'
+        out += super().__str__()
+        return(out)

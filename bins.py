@@ -13,7 +13,7 @@ class Bin:
         return(live_count)
     def prob_estimate(self, current_count):
         live_count = self.live_count(current_count)
-        p = self.count/live_count
+        p = self.count/live_count if live_count != 0 else 0.
         return(p)
 
 
@@ -26,7 +26,7 @@ class HierarchicalBin(Bin):
     def __str__(self):
         parent_out = str(self.parent)
         parent_out = parent_out.replace('\n','\n\t')
-        out = f"{self.count}, {self.set}\n{parent_out}"
+        out = f"{self.count}, {self.set}\n\t{parent_out}"
         return(out)
     def live_count(self, current_count):
         live_count = current_count - self.birth_count

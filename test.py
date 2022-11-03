@@ -21,9 +21,10 @@ def create_test_data(N,d):
     return(data)
 
 if __name__=='__main__':
-    N, d = 10**1, 3
+    N, d = 10**5, 3
     data = create_test_data(N, d)
-    algo = HoeffdingLebesgueAlgorithm(.1,1)
+    #algo = HoeffdingLebesgueAlgorithm(.1,1)
+    algo = BiasVarianceBalancingAlgorithm(2.,1)
     algo.loop(data)
     print('Printing algorithm')
     print(algo)

@@ -1,5 +1,7 @@
 import itertools
 
+import numpy as np
+
 
 class Set:
     pass
@@ -59,6 +61,9 @@ class OneDimensionalInterval(Set):
         left_interval = OneDimensionalInterval(self.left_bound,item,self.left_inclusive,include_in_left)
         right_interval = OneDimensionalInterval(item,self.right_bound,not include_in_left, self.right_inclusive)
         return(left_interval,right_interval)
+    def size(self):
+        out = self.right_bound - self.left_bound
+        return(out)
 
 
 class MultiDimensionalInterval(Set):
@@ -84,8 +89,11 @@ class MultiDimensionalInterval(Set):
         item = self._check_item_dimension(item)
         include_in_left = self._check_item_dimension(include_in_left)
         out = []
-        for sub_box_arguments in itertools.product([ self._make_marginal_left_arguments(item,include_in_left,idx) for idx in range(self.dim) ]):
-            out.append(MultiDimensionalInterval(sub_box_arguments))
+
+        marginal_compoenents = [self._make_marginal_left_arguments(item, include_in_left, idx) for idx in range(self.dim)]
+        for sub_box_arguments in itertools.product(*marginal_compoenents):
+            sub_box_arguments = list(zip(*sub_box_arguments))
+            out.append(MultiDimensionalInterval(*sub_box_arguments))
         out = tuple(out)
         return(out)
     def _make_marginal_left_arguments(self,item,include_in_left,idx):
@@ -103,8 +111,13 @@ class MultiDimensionalInterval(Set):
         )
         return(left_interval,right_interval)
     def _check_item_dimension(self,item):
-        if self.dim==1:
+        try:
+            len(item)
+        except TypeError:
             item = [item]
-        elif len(item)!=self.dim:
+        if len(item)!=self.dim:
             raise ValueError(f'Expected argument item of length {self.dim}. Got {len(item)} instead.')
         return(item)
+    def size(self):
+        out = np.product([ marginal.size() for marginal in self.marginals ])
+        return(out)
