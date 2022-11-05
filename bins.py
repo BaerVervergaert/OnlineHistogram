@@ -1,3 +1,5 @@
+import numpy as np
+
 class Bin:
     def __init__(self,set):
         super().__init__()
@@ -55,6 +57,12 @@ class MedianHierarchicalBin(HierarchicalBin):
         parent_out = parent_out.replace('\n','\n\t')
         out = f"{self.count}, {self.birth_count}, {self.median},{self.set}\n\t{parent_out}"
         return(out)
+    def get_median(self):
+        if self.median is not None:
+            return(self.median)
+        else:
+            if all( np.isfinite(lb) for lb in self.set.left_bound) and all( np.isfinite(rb) for rb in self.set.right_bound):
+                half_bound = [ (self.set.left_bound[idx]+self.set.right_bound[idx])/2. for idx in range(self.set.dim) ]
     def increment(self,x,*args,**kwargs):
         x = self.set._check_item_dimension(x)
         self.count += 1

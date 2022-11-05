@@ -47,18 +47,18 @@ class BiasVarianceBalancingAlgorithm(BaseAlgorithm):
     def constraint(self,state,x):
         if state.live_count(self.count) == 0:
             return(False)
-        if self.count >= 2**(2+self.dim)*self.previous_split/self.base_width:
+        if self.count >= 2**(2+self.dim)*self.previous_split:
             return(True)
         return(False)
 
     def split(self,_state,x):
         new_states = []
         for state in self.states:
-            if state.median is None:
+            if state.get_median() is None:
                 new_states += [state]
             else:
                 x = state.set._check_item_dimension(x)
-                half_bound = state.median
+                half_bound = state.get_median()
                 half_include = [abs(state.set.left_bound[idx] - x[idx]) <= abs(state.set.right_bound[idx] - x[idx]) for idx in range(state.set.dim)]
                 new_states += state.split(self.count, half_bound, half_include)
         new_states = tuple(new_states)
