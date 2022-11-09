@@ -54,7 +54,7 @@ class BiasVarianceBalancingAlgorithm(BaseAlgorithm):
     def split(self,_state,x):
         new_states = []
         for state in self.states:
-            if state.get_median() is None:
+            if state.get_median() is None or all( lb==rb for lb,rb in zip(state.set.left_bound,state.set.right_bound)):
                 new_states += [state]
             else:
                 x = state.set._check_item_dimension(x)
@@ -104,5 +104,37 @@ class HoeffdingLebesgueAlgorithm(BaseAlgorithm):
         self.count += 1
     def __str__(self):
         out = 'HoeffdingLebesgueAlgorithm, with states:\n'
+        out += super().__str__()
+        return(out)
+
+class MedianHoeffdingLebesgueAlgorithm(HoeffdingLebesgueAlgorithm):
+    def __init__(self,base_step,acceptance_rate,dim):
+        super(HoeffdingLebesgueAlgorithm,self).__init__()
+        self.acceptance_rate = acceptance_rate
+        self.dim = dim
+        self.base_step = base_step
+        a = [-np.inf for i in range(self.dim)]
+        b = [np.inf for i in range(self.dim)]
+        left_inclusive = [False for i in range(self.dim)]
+        right_inclusive = [False for i in range(self.dim)]
+        base_set = MultiDimensionalInterval(a, b, left_inclusive, right_inclusive)
+        base_bin = MedianHierarchicalBin(base_step,base_set, None, 0)
+        self.states.append(base_bin)
+    def split(self,state,x):
+        if state.get_median() is None or all( lb==rb for lb,rb in zip(state.set.left_bound,state.set.right_bound)):
+            new_states = [state]
+        else:
+            x = state.set._check_item_dimension(x)
+            half_bound = state.get_median()
+            half_include = [abs(state.set.left_bound[idx] - x[idx]) <= abs(state.set.right_bound[idx] - x[idx]) for idx
+                            in range(state.set.dim)]
+            new_states = state.split(self.count, half_bound, half_include)
+        self.states.remove(state)
+        self.states += new_states
+    def update(self,state,x):
+        state.increment(x)
+        self.count += 1
+    def __str__(self):
+        out = 'Median'
         out += super().__str__()
         return(out)

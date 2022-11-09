@@ -71,8 +71,19 @@ class MedianHierarchicalBin(HierarchicalBin):
         else:
             for idx in range(self.set.dim):
                 self.median[idx] += self.step/self.count if self.median[idx]<x[idx] else 0.
+                self.median[idx] = min(self.median[idx],self.set.right_bound[idx])
                 self.median[idx] -= self.step/self.count if self.median[idx]>x[idx] else 0.
+                self.median[idx] = max(self.median[idx], self.set.left_bound[idx])
+
     def split(self,current_count,*args,**kwargs):
-        out = tuple( MedianHierarchicalBin(self.step/2.,subset,self,current_count) for subset in self.set.split(*args,**kwargs) )
+        subsets = self.set.split(*args,**kwargs)
+        out = []
+        for subset in subsets:
+            a = subset.left_bound
+            b = subset.right_bound
+            step_size = np.min([ abs(a[i] - b[i]) for i in range(self.set.dim) ])
+            step_size = step_size if np.isfinite(step_size) else self.step
+            out.append(MedianHierarchicalBin(step_size,subset,self,current_count))
+        out = tuple(out)
         self.child_count = len(out)
         return(out)

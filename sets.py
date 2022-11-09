@@ -90,8 +90,8 @@ class MultiDimensionalInterval(Set):
         include_in_left = self._check_item_dimension(include_in_left)
         out = []
 
-        marginal_compoenents = [self._make_marginal_left_arguments(item, include_in_left, idx) for idx in range(self.dim)]
-        for sub_box_arguments in itertools.product(*marginal_compoenents):
+        marginal_components = [self._make_marginal_left_arguments(item, include_in_left, idx) for idx in range(self.dim)]
+        for sub_box_arguments in itertools.product(*marginal_components):
             sub_box_arguments = list(zip(*sub_box_arguments))
             out.append(MultiDimensionalInterval(*sub_box_arguments))
         out = tuple(out)
@@ -106,7 +106,7 @@ class MultiDimensionalInterval(Set):
         right_interval = (
             item[idx],
             self.right_bound[idx],
-            include_in_left[idx],
+            not include_in_left[idx],
             self.right_bound[idx],
         )
         return(left_interval,right_interval)
