@@ -99,6 +99,9 @@ class HoeffdingLebesgueAlgorithm(BaseAlgorithm):
         new_states = state.split(self.count,half_bound,half_include)
         self.states.remove(state)
         self.states += new_states
+        found_state = self.find_state(x)
+        self.update(found_state, x)
+
     def update(self,state,x):
         state.count += 1
         self.count += 1
@@ -119,18 +122,37 @@ class MedianHoeffdingLebesgueAlgorithm(HoeffdingLebesgueAlgorithm):
         right_inclusive = [False for i in range(self.dim)]
         base_set = MultiDimensionalInterval(a, b, left_inclusive, right_inclusive)
         base_bin = MedianHierarchicalBin(base_step,base_set, None, 0)
+        base_bin.split_count = 1
         self.states.append(base_bin)
+    def constraint(self,state,x):
+        t = state.live_count(self.count)
+        if t==0:
+            return(False)
+        if t==1:
+            return(True)
+        bound = sum( st.split_count for st in self.states )
+        delta = (state.prob_estimate(self.count)-1/bound)
+        if state.live_count(self.count)>0 and delta>0 and t >= np.log(1./self.acceptance_rate)*8/(delta**2):
+            return(True)
+        return(False)
     def split(self,state,x):
-        if state.get_median() is None or all( lb==rb for lb,rb in zip(state.set.left_bound,state.set.right_bound)):
+        if state.get_median() is None:
             new_states = [state]
+        elif all( lb==rb for lb,rb in zip(state.set.left_bound,state.set.right_bound)):
+            new_states = [state]
+            state.split_count += 1
         else:
             x = state.set._check_item_dimension(x)
             half_bound = state.get_median()
             half_include = [abs(state.set.left_bound[idx] - x[idx]) <= abs(state.set.right_bound[idx] - x[idx]) for idx
                             in range(state.set.dim)]
             new_states = state.split(self.count, half_bound, half_include)
+            for new_state in new_states:
+                new_state.split_count = 1
         self.states.remove(state)
         self.states += new_states
+        found_state = self.find_state(x)
+        self.update(found_state,x)
     def update(self,state,x):
         state.increment(x)
         self.count += 1

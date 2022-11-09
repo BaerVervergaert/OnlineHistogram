@@ -107,7 +107,7 @@ class MultiDimensionalInterval(Set):
             item[idx],
             self.right_bound[idx],
             not include_in_left[idx],
-            self.right_bound[idx],
+            self.right_inclusive[idx],
         )
         return(left_interval,right_interval)
     def _check_item_dimension(self,item):

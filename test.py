@@ -16,19 +16,17 @@ def create_test_data(N,d):
         if np.random.random()<=.5:
             x[i] = np.random.normal(0,1)
         else:
-            x[i] = np.random.normal(10,3)
+            x[i] = 5.
     data = x
     return(data)
 
 if __name__=='__main__':
     N, d = 10**5, 3
     data = create_test_data(N, d)
-    algo = MedianHoeffdingLebesgueAlgorithm(1.,.1,1)
-    #algo = BiasVarianceBalancingAlgorithm(2.,1)
-    try:
-        algo.loop(data)
-    except:
-        print('Printing algorithm')
-        print(algo)
-        print('Plotting')
+    #algo = MedianHoeffdingLebesgueAlgorithm(1.,.1,1)
+    algo = BiasVarianceBalancingAlgorithm(2.,1)
+    algo.loop(data)
+    print('Printing algorithm')
+    print(algo)
+    print('Plotting')
     plot_onedimensional_algo(-3.,13.,algo)
